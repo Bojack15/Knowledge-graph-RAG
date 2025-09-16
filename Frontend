@@ -27,157 +27,219 @@
             border-radius: 20px;
         }
         .chat-message-user {
-            background-color: #e0e7ff;
-            border-radius: 1rem 1rem 0 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 1.5rem 1.5rem 0.5rem 1.5rem;
+            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
         }
         .chat-message-ai {
-            background-color: #f8fafc;
-            border-radius: 1rem 1rem 1rem 0;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 1.5rem 1.5rem 1.5rem 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #4f46e5;
         }
-        .language-selector:hover .language-dropdown {
-            display: block;
+        .typing-indicator {
+            display: none;
         }
-        .document-preview {
-            background-color: rgba(0, 0, 0, 0.05);
+        .typing-indicator.active {
+            display: flex;
         }
-        .sensitive-highlight {
-            background-color: rgba(255, 165, 0, 0.3);
-            border-bottom: 2px dashed #ffa500;
+        .typing-dot {
+            animation: typing 1.4s infinite;
+            animation-fill-mode: both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.4s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.6s; }
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+        .message-time {
+            font-size: 0.75rem;
+            opacity: 0.6;
+            margin-top: 0.25rem;
+        }
+        .auto-resize {
+            min-height: 44px;
+            max-height: 120px;
+            resize: none;
+            overflow-y: auto;
+        }
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+        .suggested-prompts button:hover {
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
         }
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <!-- Vanta.js Background -->
-    <div id="vanta-bg" class="fixed inset-0 -z-10 opacity-20"></div>
+    <div id="vanta-bg" class="fixed inset-0 -z-10 opacity-30"></div>
 
     <!-- Main App Container -->
     <div class="container mx-auto px-4 py-6">
         <!-- Header -->
-        <header class="flex justify-between items-center mb-8">
-            <div class="flex items-center space-x-2">
-                <i data-feather="shield" class="text-indigo-600 w-8 h-8"></i>
-                <h1 class="text-2xl font-bold text-gray-800">SecureAI</h1>
+        <header class="flex justify-between items-center mb-8 bg-white/80 backdrop-blur-md rounded-xl p-4 shadow-lg">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <i data-feather="shield" class="text-white w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">SecureAI</h1>
+                    <p class="text-xs text-gray-500">India's Private AI Assistant</p>
+                </div>
             </div>
             
             <div class="flex items-center space-x-4">
-                <!-- Empty space where language selector was -->
+                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                    <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span>Online</span>
+                </div>
+                <button id="loginBtn" class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:shadow-lg transition-all duration-300">
+                    Login
+                </button>
             </div>
         </header>
 
         <!-- Main Content -->
-        <main class="bg-white rounded-xl shadow-lg overflow-hidden h-[90vh]">
+        <main class="bg-white/90 backdrop-blur-md rounded-xl shadow-xl overflow-hidden chat-container">
             <div class="flex h-full">
                 <!-- Sidebar -->
-                <div class="w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto h-full">
-                    <div class="p-4 h-full flex flex-col">
-                        <button class="w-full flex items-center justify-between px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-                            <span>New Chat</span>
-                            <i data-feather="plus" class="w-4 h-4"></i>
+                <div class="w-72 bg-gray-50/80 backdrop-blur-md border-r border-gray-200 overflow-y-auto sidebar">
+                    <div class="p-6 h-full flex flex-col">
+                        <button id="newChatBtn" class="w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 mb-6">
+                            <i data-feather="plus" class="w-5 h-5 mr-2"></i>
+                            <span class="font-medium">New Chat</span>
                         </button>
                         
-                        <div class="mt-6 flex-1 overflow-y-auto">
-                            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Recent Chats</h3>
-                            <ul class="space-y-1">
+                        <div class="flex-1 overflow-y-auto">
+                            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Recent Chats</h3>
+                            <ul class="space-y-2" id="chatHistory">
                                 <li>
-                                    <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100">
-                                        <i data-feather="message-square" class="w-4 h-4 mr-2 text-gray-400"></i>
-                                        Insurance Policy Comparison
-                                    </a>
+                                    <button class="w-full text-left flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-xl hover:bg-white/60 transition-all duration-200 group">
+                                        <i data-feather="message-circle" class="w-4 h-4 mr-3 text-gray-400 group-hover:text-indigo-500"></i>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="truncate">Insurance Policy Comparison</div>
+                                            <div class="text-xs text-gray-400 mt-1">2 hours ago</div>
+                                        </div>
+                                    </button>
                                 </li>
                                 <li>
-                                    <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100">
-                                        <i data-feather="message-square" class="w-4 h-4 mr-2 text-gray-400"></i>
-                                        Aadhaar Card Query
-                                    </a>
+                                    <button class="w-full text-left flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-xl hover:bg-white/60 transition-all duration-200 group">
+                                        <i data-feather="message-circle" class="w-4 h-4 mr-3 text-gray-400 group-hover:text-indigo-500"></i>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="truncate">Aadhaar Card Query</div>
+                                            <div class="text-xs text-gray-400 mt-1">Yesterday</div>
+                                        </div>
+                                    </button>
                                 </li>
                                 <li>
-                                    <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 rounded-md hover:bg-gray-100">
-                                        <i data-feather="message-square" class="w-4 h-4 mr-2 text-gray-400"></i>
-                                        Bank Statement Analysis
-                                    </a>
+                                    <button class="w-full text-left flex items-center px-3 py-3 text-sm font-medium text-gray-700 rounded-xl hover:bg-white/60 transition-all duration-200 group">
+                                        <i data-feather="message-circle" class="w-4 h-4 mr-3 text-gray-400 group-hover:text-indigo-500"></i>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="truncate">Bank Statement Analysis</div>
+                                            <div class="text-xs text-gray-400 mt-1">3 days ago</div>
+                                        </div>
+                                    </button>
                                 </li>
                             </ul>
                         </div>
                         
+                        <div class="pt-4 border-t border-gray-200 mt-4">
+                            <div class="flex items-center space-x-3 p-3 bg-white/60 rounded-xl">
+                                <div class="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                                    <i data-feather="user" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-700 truncate">Demo User</div>
+                                    <div class="text-xs text-gray-500">Free Plan</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
                 <!-- Chat Area -->
                 <div class="flex-1 flex flex-col h-full">
-                    <div class="flex-1 overflow-y-auto p-6">
-                        <!-- Chat Messages -->
-                        <div class="space-y-4">
+                    <!-- Chat Messages -->
+                    <div class="flex-1 overflow-y-auto p-6" id="chatMessages">
+                        <div class="space-y-6">
                             <!-- AI Welcome Message -->
-                            <div class="flex" data-aos="fade-up">
-                                <div class="flex-shrink-0 mr-4">
-                                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                                        <i data-feather="shield" class="text-indigo-600 w-5 h-5"></i>
+                            <div class="flex items-start space-x-4" data-aos="fade-up">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                                        <i data-feather="shield" class="text-white w-5 h-5"></i>
                                     </div>
                                 </div>
-                                <div class="chat-message-ai p-4 max-w-3xl">
-                                    <p class="text-gray-800">Hello! I'm SecureAI, your private AI assistant designed with Indian privacy and security in mind. How can I help you today?</p>
-                                    <div class="mt-3 flex flex-wrap gap-2">
-                                        <button class="px-3 py-1 text-xs bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100">Compare insurance policies</button>
-                                        <button class="px-3 py-1 text-xs bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100">Analyze my document</button>
-                                        <button class="px-3 py-1 text-xs bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100">Explain PMJJBY scheme</button>
+                                <div class="flex-1">
+                                    <div class="chat-message-ai p-6 max-w-4xl">
+                                        <div class="flex items-center mb-2">
+                                            <span class="font-semibold text-gray-800">SecureAI</span>
+                                            <span class="ml-2 px-2 py-1 text-xs bg-green-100 text-green-600 rounded-full">Online</span>
+                                        </div>
+                                        <p class="text-gray-800 leading-relaxed">Namaste! 🙏 I'm SecureAI, your private AI assistant designed specifically for Indian users with privacy and security at its core. I can help you with:</p>
+                                        
+                                        <div class="grid grid-cols-2 gap-3 mt-4 mb-4">
+                                            <div class="p-3 bg-indigo-50 rounded-lg">
+                                                <i data-feather="file-text" class="w-4 h-4 text-indigo-600 mb-1"></i>
+                                                <div class="text-sm font-medium text-gray-800">Document Analysis</div>
+                                            </div>
+                                            <div class="p-3 bg-green-50 rounded-lg">
+                                                <i data-feather="shield" class="w-4 h-4 text-green-600 mb-1"></i>
+                                                <div class="text-sm font-medium text-gray-800">Privacy Protection</div>
+                                            </div>
+                                            <div class="p-3 bg-blue-50 rounded-lg">
+                                                <i data-feather="trending-up" class="w-4 h-4 text-blue-600 mb-1"></i>
+                                                <div class="text-sm font-medium text-gray-800">Financial Advice</div>
+                                            </div>
+                                            <div class="p-3 bg-purple-50 rounded-lg">
+                                                <i data-feather="code" class="w-4 h-4 text-purple-600 mb-1"></i>
+                                                <div class="text-sm font-medium text-gray-800">Code Review</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="suggested-prompts">
+                                            <p class="text-sm text-gray-600 mb-3">Try asking me:</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                <button class="suggested-prompt px-4 py-2 text-sm bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 rounded-full hover:shadow-md transition-all duration-200 border border-indigo-200">
+                                                    Compare insurance policies
+                                                </button>
+                                                <button class="suggested-prompt px-4 py-2 text-sm bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 rounded-full hover:shadow-md transition-all duration-200 border border-indigo-200">
+                                                    Explain PMJJBY scheme
+                                                </button>
+                                                <button class="suggested-prompt px-4 py-2 text-sm bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 rounded-full hover:shadow-md transition-all duration-200 border border-indigo-200">
+                                                    Review my code
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="message-time text-gray-400 ml-6 mt-1">
+                                        Just now
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- Example User Message -->
-                            <div class="flex justify-end" data-aos="fade-up">
-                                <div class="chat-message-user p-4 max-w-3xl">
-                                    <p class="text-gray-800">Can you help me understand the difference between term insurance and whole life insurance?</p>
-                                </div>
-                                <div class="flex-shrink-0 ml-4">
-                                    <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">
-                                        <i data-feather="user" class="text-white w-5 h-5"></i>
+
+                            <!-- Typing Indicator -->
+                            <div class="typing-indicator flex items-start space-x-4">
+                                <div class="flex-shrink-0">
+                                    <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                                        <i data-feather="shield" class="text-white w-5 h-5"></i>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <!-- Example AI Response -->
-                            <div class="flex" data-aos="fade-up">
-                                <div class="flex-shrink-0 mr-4">
-                                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                                        <i data-feather="shield" class="text-indigo-600 w-5 h-5"></i>
-                                    </div>
-                                </div>
-                                <div class="chat-message-ai p-4 max-w-3xl">
-                                    <p class="text-gray-800">Certainly! Here's a comparison of term insurance and whole life insurance:</p>
-                                    <div class="mt-3 bg-gray-50 p-3 rounded-lg">
-                                        <table class="min-w-full divide-y divide-gray-200">
-                                            <thead class="bg-gray-100">
-                                                <tr>
-                                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Feature</th>
-                                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Term Insurance</th>
-                                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Whole Life Insurance</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-200">
-                                                <tr>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">Coverage Period</td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">Fixed term (10-30 years)</td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">Lifetime</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">Premium</td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">Lower</td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">Higher</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">Maturity Benefit</td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">None</td>
-                                                    <td class="px-3 py-2 text-sm text-gray-700">Yes</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                    <p class="mt-3 text-gray-800">Would you like me to show you some specific policies available in the Indian market?</p>
-                                    <div class="mt-3 flex space-x-3">
-                                        <button class="px-3 py-1 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Yes, show policies</button>
-                                        <button class="px-3 py-1 text-sm border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">No thanks</button>
+                                <div class="chat-message-ai p-4">
+                                    <div class="flex items-center space-x-1">
+                                        <div class="typing-dot w-2 h-2 bg-indigo-400 rounded-full"></div>
+                                        <div class="typing-dot w-2 h-2 bg-indigo-400 rounded-full"></div>
+                                        <div class="typing-dot w-2 h-2 bg-indigo-400 rounded-full"></div>
                                     </div>
                                 </div>
                             </div>
@@ -185,57 +247,300 @@
                     </div>
                     
                     <!-- Input Area -->
-                    <div class="border-t border-gray-200 p-4 bg-white shrink-0">
-                        <div class="relative">
-                            <textarea 
-                                class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none max-h-32" 
-                                rows="1" 
-                                placeholder="Message SecureAI..."></textarea>
-                            <div class="absolute right-3 bottom-3 flex space-x-2">
-                                <button class="p-1 text-gray-500 hover:text-indigo-600">
-                                    <i data-feather="paperclip" class="w-5 h-5"></i>
-                                </button>
-                                <button class="p-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
-                                    <i data-feather="send" class="w-4 h-4"></i>
-                                </button>
+                    <div class="border-t border-gray-200 p-6 bg-white/80 backdrop-blur-md">
+                        <div class="flex items-end space-x-4">
+                            <button class="p-3 text-gray-400 hover:text-indigo-600 transition-colors duration-200">
+                                <i data-feather="paperclip" class="w-5 h-5"></i>
+                            </button>
+                            
+                            <div class="flex-1 relative">
+                                <textarea 
+                                    id="messageInput"
+                                    class="auto-resize w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 placeholder-gray-500" 
+                                    rows="1" 
+                                    placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"></textarea>
+                            </div>
+                            
+                            <button id="sendBtn" class="p-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i data-feather="send" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="flex items-center justify-between mt-3">
+                            <p class="text-xs text-gray-500">
+                                <i data-feather="lock" class="w-3 h-3 inline mr-1"></i>
+                                Your conversations are encrypted and stored locally in India
+                            </p>
+                            <div class="text-xs text-gray-400">
+                                <span id="charCount">0</span>/2000
                             </div>
                         </div>
-                        <p class="mt-2 text-xs text-gray-500 pb-1">
-                            SecureAI is designed to protect your privacy. Your chats are encrypted and we never store sensitive information like Aadhaar, PAN, etc.
-                        </p>
                     </div>
                 </div>
             </div>
         </main>
-        
     </div>
 
     <script>
-        // Initialize Vanta.js background
-        VANTA.GLOBE({
-            el: "#vanta-bg",
-            mouseControls: true,
-            touchControls: true,
-            gyroControls: false,
-            minHeight: 200.00,
-            minWidth: 200.00,
-            scale: 1.00,
-            scaleMobile: 1.00,
-            color: "#4f46e5",
-            backgroundColor: "#ffffff",
-            size: 0.8
+        // Configuration
+        const API_BASE_URL = 'http://10.171.191.73:8000/login';
+        const MAX_MESSAGE_LENGTH = 2000;
+        
+        // DOM Elements
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const charCount = document.getElementById('charCount');
+        const typingIndicator = document.querySelector('.typing-indicator');
+        
+        // Initialize components
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeVanta();
+            initializeAOS();
+            initializeFeather();
+            setupEventListeners();
+            setupAutoResize();
         });
 
-        // Initialize AOS animations
-        AOS.init({
-            duration: 600,
-            easing: 'ease-in-out',
-            once: true
-        });
+        function initializeVanta() {
+            if (window.VANTA) {
+                VANTA.GLOBE({
+                    el: "#vanta-bg",
+                    mouseControls: true,
+                    touchControls: true,
+                    gyroControls: false,
+                    minHeight: 200,
+                    minWidth: 200,
+                    scale: 1.00,
+                    scaleMobile: 1.00,
+                    color: "#4f46e5",
+                    backgroundColor: "#ffffff",
+                    size: 0.6
+                });
+            }
+        }
 
-        // Initialize Feather Icons
-        feather.replace();
+        function initializeAOS() {
+            if (window.AOS) {
+                AOS.init({
+                    duration: 600,
+                    easing: 'ease-in-out',
+                    once: true
+                });
+            }
+        }
 
+        function initializeFeather() {
+            if (window.feather) {
+                feather.replace();
+            }
+        }
+
+        function setupEventListeners() {
+            // Message input events
+            messageInput.addEventListener('keydown', handleKeydown);
+            messageInput.addEventListener('input', updateCharCount);
+            
+            // Send button
+            sendBtn.addEventListener('click', sendMessage);
+            
+            // Suggested prompts
+            document.querySelectorAll('.suggested-prompt').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    messageInput.value = this.textContent.trim();
+                    messageInput.focus();
+                    updateCharCount();
+                });
+            });
+            
+            // New chat button
+            document.getElementById('newChatBtn').addEventListener('click', startNewChat);
+            
+            // Login button
+            document.getElementById('loginBtn').addEventListener('click', function() {
+                window.location.href = 'login.html';
+            });
+        }
+
+        function setupAutoResize() {
+            messageInput.addEventListener('input', function() {
+                this.style.height = '44px';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+        }
+
+        function handleKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function updateCharCount() {
+            const count = messageInput.value.length;
+            charCount.textContent = count;
+            charCount.className = count > MAX_MESSAGE_LENGTH * 0.9 ? 'text-red-500' : 'text-gray-400';
+            sendBtn.disabled = count === 0 || count > MAX_MESSAGE_LENGTH;
+        }
+
+        async function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message || message.length > MAX_MESSAGE_LENGTH) return;
+            
+            // Clear input
+            messageInput.value = '';
+            messageInput.style.height = '44px';
+            updateCharCount();
+            
+            // Add user message
+            addMessage(message, 'user');
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            try {
+                // Call API
+                const response = await fetch(`${API_BASE_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer ${getAuthToken()}`
+                    },
+                    body: JSON.stringify({ 
+                        message,
+                        timestamp: new Date().toISOString(),
+                        session_id: getSessionId()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addMessage(data.message || data.response || 'Sorry, I received an empty response.', 'ai');
+                } else {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessage(
+                    `I'm having trouble connecting to the server right now. Please try again in a moment. (Error: ${error.message})`,
+                    'error'
+                );
+            } finally {
+                hideTypingIndicator();
+            }
+        }
+
+        function addMessage(content, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'flex items-start space-x-4';
+            messageDiv.setAttribute('data-aos', 'fade-up');
+            
+            const timestamp = new Date().toLocaleTimeString('en-IN', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            
+            if (sender === 'user') {
+                messageDiv.classList.add('justify-end');
+                messageDiv.innerHTML = `
+                    <div class="flex-1 max-w-4xl">
+                        <div class="chat-message-user p-4 ml-auto max-w-fit">
+                            <p class="text-white leading-relaxed">${escapeHtml(content)}</p>
+                        </div>
+                        <div class="message-time text-gray-400 text-right mr-6 mt-1">
+                            ${timestamp}
+                        </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+                            <i data-feather="user" class="text-white w-5 h-5"></i>
+                        </div>
+                    </div>
+                `;
+            } else {
+                const bgClass = sender === 'error' ? 'bg-red-50 border-red-400' : '';
+                const textClass = sender === 'error' ? 'text-red-700' : 'text-gray-800';
+                
+                messageDiv.innerHTML = `
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                            <i data-feather="${sender === 'error' ? 'alert-triangle' : 'shield'}" class="text-white w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <div class="chat-message-ai p-4 max-w-4xl ${bgClass}">
+                            <div class="flex items-center mb-2">
+                                <span class="font-semibold ${textClass}">SecureAI</span>
+                                ${sender === 'error' ? '<span class="ml-2 px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">Error</span>' : ''}
+                            </div>
+                            <p class="${textClass} leading-relaxed">${formatMessage(content)}</p>
+                        </div>
+                        <div class="message-time text-gray-400 ml-6 mt-1">
+                            ${timestamp}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            const messagesContainer = chatMessages.querySelector('.space-y-6');
+            messagesContainer.appendChild(messageDiv);
+            
+            // Re-initialize components
+            initializeFeather();
+            if (window.AOS) AOS.refresh();
+            
+            // Scroll to bottom
+            messageDiv.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }
+
+        function showTypingIndicator() {
+            typingIndicator.classList.add('active');
+            typingIndicator.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.classList.remove('active');
+        }
+
+        function startNewChat() {
+            const messagesContainer = chatMessages.querySelector('.space-y-6');
+            const welcomeMessage = messagesContainer.children[0];
+            messagesContainer.innerHTML = '';
+            messagesContainer.appendChild(welcomeMessage);
+            messagesContainer.appendChild(typingIndicator);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatMessage(content) {
+            // Basic formatting for AI responses
+            return escapeHtml(content)
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>');
+        }
+
+        function getAuthToken() {
+            return localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || '';
+        }
+
+        function getSessionId() {
+            let sessionId = sessionStorage.getItem('chat_session_id');
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('chat_session_id', sessionId);
+            }
+            return sessionId;
+        }
+
+        // Initialize character count
+        updateCharCount();
     </script>
 </body>
 </html>
