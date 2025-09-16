@@ -1,0 +1,76 @@
+// login.js
+
+const API_BASE_URL = 'http://115.243.103.1/login'; // update your API URL accordingly
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.querySelector('form');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('remember-me').checked;
+    const submitBtn = form.querySelector('button[type="submit"]');
+
+    // Clear previous errors
+    document.querySelectorAll('.error-message').forEach(el => el.remove());
+
+    // Loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="animate-spin">⚙️</span> Signing in...';
+
+    // For demo/testing, replace with actual API call:
+    if ((email === 'demo@secureai.com' || email === 'test@example.com') && password === '123456') {
+      const fakeToken = 'demo-token-12345';
+      if (rememberMe) {
+        localStorage.setItem('access_token', fakeToken);
+        localStorage.setItem('refresh_token', 'demo-refresh-token');
+      } else {
+        sessionStorage.setItem('access_token', fakeToken);
+      }
+      localStorage.setItem('user', JSON.stringify({ email, name: 'Demo User' }));
+
+      // Redirect to main app page
+      window.location.href = '/index.html'; // update path accordingly
+      return;
+    }
+
+    // Real API call for login
+    try {
+      const response = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, remember_me: rememberMe }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (rememberMe) {
+          localStorage.setItem('access_token', data.access_token);
+          localStorage.setItem('refresh_token', data.refresh_token);
+        } else {
+          sessionStorage.setItem('access_token', data.access_token);
+        }
+
+        localStorage.setItem('user', JSON.stringify(data.user));
+        window.location.href = '/index.html'; // update path accordingly
+      } else {
+        // Show API error message
+        showError(form, data.message || 'Login failed.');
+      }
+    } catch (error) {
+      showError(form, 'Network error. Please try again later.');
+      console.error('Login error:', error);
+    }
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<span>Sign in</span>';
+  });
+
+  function showError(form, message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message mt-4 p-3 bg-red-50 text-red-700 rounded-md text-sm';
+    errorDiv.textContent = message;
+    form.insertBefore(errorDiv, form.firstChild);
+  }
+});
