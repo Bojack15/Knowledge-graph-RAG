@@ -1,13 +1,15 @@
 // login.js
 
-const API_BASE_URL = 'http://115.243.103.1/login'; // update your API URL accordingly
+// Updated API_BASE_URL to point to the correct endpoint
+const API_BASE_URL = 'http://10.171.191.73:8000';
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.querySelector('form');
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const email = document.getElementById('email').value.trim();
+    // Changed 'email' to 'username' to match the input field in login.html
+    const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value;
     const rememberMe = document.getElementById('remember-me').checked;
     const submitBtn = form.querySelector('button[type="submit"]');
@@ -19,8 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="animate-spin">⚙️</span> Signing in...';
 
-    // For demo/testing, replace with actual API call:
-    if ((email === 'demo@secureai.com' || email === 'test@example.com') && password === '123456') {
+    // For demo/testing, using username and password
+    if ((username === 'demouser' || username === 'testuser') && password === '123456') {
       const fakeToken = 'demo-token-12345';
       if (rememberMe) {
         localStorage.setItem('access_token', fakeToken);
@@ -28,10 +30,10 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         sessionStorage.setItem('access_token', fakeToken);
       }
-      localStorage.setItem('user', JSON.stringify({ email, name: 'Demo User' }));
+      localStorage.setItem('user', JSON.stringify({ username, name: 'Demo User' }));
 
-      // Redirect to main app page
-      window.location.href = '/index.html'; // update path accordingly
+      // Corrected redirect path to your main app page
+      window.location.href = 'frontend.html';
       return;
     }
 
@@ -40,7 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, remember_me: rememberMe }),
+        // Changed 'email' to 'username' in the body to match your FastAPI endpoint
+        body: JSON.stringify({ username, password, remember_me: rememberMe }),
       });
 
       const data = await response.json();
@@ -54,7 +57,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         localStorage.setItem('user', JSON.stringify(data.user));
-        window.location.href = '/index.html'; // update path accordingly
+        // Corrected redirect path to your main app page
+        window.location.href = 'frontend.html';
       } else {
         // Show API error message
         showError(form, data.message || 'Login failed.');
